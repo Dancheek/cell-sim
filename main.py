@@ -17,8 +17,10 @@ class cell:
 	pass
 
 state = "idle"
+clock = pygame.time.Clock()
 while state != "quit":
 	main()
+	clock.tick(30)
 	for e in pygame.event.get():
 		if e.type == pygame.QUIT:
 			state = "quit"
