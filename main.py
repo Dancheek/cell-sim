@@ -1,5 +1,6 @@
 import pygame
-import cell
+import Cell
+import World
 
 SCREEN_WIDTH = 600
 SCREEN_HEIGHT = 600
@@ -16,6 +17,8 @@ def main():
 	pygame.display.flip()
 
 
+world = World()
+
 state = "idle"
 clock = pygame.time.Clock()
 while state != "quit":
@@ -24,4 +27,3 @@ while state != "quit":
 	for e in pygame.event.get():
 		if e.type == pygame.QUIT:
 			state = "quit"
-
