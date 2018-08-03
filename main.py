@@ -24,11 +24,11 @@ def main():
 		for y in range(WORLD_HEIGHT):
 			if world.cells[x][y] is not None:
 				screen.fill(world.cells[x][y].color, pygame.rect.Rect(x * CELL_WIDTH + 1, y * CELL_HEIGHT + 1, CELL_WIDTH - 2, CELL_HEIGHT - 2))
-				#world.cells[x][y].do_step()
+				world.cells[x][y].do_step()
 	pygame.display.flip()
+3
 
-
-world = World.World(WORLD_WIDTH, WORLD_HEIGHT)
+world = World.create(WORLD_WIDTH, WORLD_HEIGHT)
 world.gen()
 
 state = "idle"
