@@ -4,7 +4,7 @@ class World:
 		self.height = height
 
         def reset(self):
-            self.cells=NULL
+            self.cells=[]
 
         def gen(self,max_x,max_y):
             for(i=0; i<max_x; i++)
