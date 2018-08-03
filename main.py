@@ -1,7 +1,18 @@
+from random import randint
+from random import choice
 import pygame
-# import Cell
-import World
 
+# -----= Some constants =-----
+
+GENOME_SIZE = 64
+ENERGY_LIMIT = 200
+
+SOLAR_POWER = 32
+SOLAR_FADING = 2
+
+FIELD_EMPTY = 0
+FIELD_WALL = 1
+FIELD_CELL = 2
 
 TICK_TIME = 30
 SCREEN_WIDTH = 640
@@ -18,6 +29,118 @@ screen = pygame.display.set_mode(SCREEN_SIZE)
 pygame.display.set_caption("Cell simulator")
 
 
+# ----------[ Cell class ]----------
+
+class Cell:
+	def __init__(self, x, y, color, parent_genome=None):
+		self.x = x
+		self.y = y
+		self.energy = 100
+		self.genome_pointer = 0
+		self.color = color
+
+		if parent_genome is not None:
+			self.genome = parent_genome
+			if randint(1, 4) == 4:
+				self.genome[randint(0, 63)] = randint(0, 63)
+		else:
+			self.genome = [23 for i in range(GENOME_SIZE)]
+
+		print(self.x, self.y, self.genome)
+
+	def get_genome_content(self, index):
+		if index >= GENOME_SIZE:
+			return self.genome[index - GENOME_SIZE]
+		return self.genome[index]
+
+	def do_step(self):
+		self.energy -= 3
+		current_genome_content = self.get_genome_content(self.genome_pointer)
+
+		if current_genome_content in genome_commands.keys():
+			genome_commands[current_genome_content](self)
+			self.genome_pointer += 1
+		else:
+			self.genome_pointer += current_genome_content
+
+		if self.genome_pointer >= GENOME_SIZE:
+			self.genome_pointer -= GENOME_SIZE
+
+		if self.energy >= ENERGY_LIMIT:
+			self.create_child()
+
+		if self.energy <= 0:
+			self.die()
+
+	def create_child(self):
+		self.energy -= 100
+
+		empty_spaces = []
+		for delta_x, delta_y in ((-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)):
+			if world.field_type(self.x + delta_x, self.y + delta_y) == FIELD_EMPTY:
+				empty_spaces.append((delta_x, delta_y))
+		if not empty_spaces:
+			self.die()
+			return
+
+		delta_x, delta_y = choice(empty_spaces)
+
+		world.cells[self.x + delta_x][self.y + delta_y] = Cell(self.x + delta_x, self.y + delta_y, self.color, self.genome)
+
+	def die(self):
+		world.cells[self.x][self.y] = None
+
+# -----= Genome commands =-----
+
+def photosynthesis(cell):
+	cell.energy += world.get_light_energy(cell.x, cell.y)
+
+genome_commands = {
+	23: photosynthesis
+}
+
+
+# ----------[ World class ]----------
+
+class World:
+	def __init__(self, width, height):
+		self.width = width
+		self.height = height
+		self.world_reset()
+
+	def world_reset(self):
+		self.cells = [[None for y in range(self.height)] for x in range(self.width)]
+
+	def cells_spawn(self):
+		for x in range(self.width):
+			for y in range(self.height):
+				if randint(1, 1000) == 1000:
+					color = (0, 255-y*3.5, 0)
+					self.cells[x][y] = Cell(x, y, color)
+
+	def get_light_energy(self, x, y):
+		energy = (SOLAR_POWER - y) / SOLAR_FADING
+		if energy <= 0:
+			return 0
+		return energy
+
+	def field_type(self, x, y):
+		if y < 0 or y >= WORLD_HEIGHT:
+			return FIELD_WALL
+
+		if x < 0:
+			x += WORLD_WIDTH
+		elif x >= WORLD_WIDTH:
+			x -= WORLD_WIDTH
+
+		if world.cells[x][y] is None:
+			return FIELD_EMPTY
+
+		return FIELD_CELL
+
+
+# ------ Mainloop ------
+
 def main():
 	screen.fill(BG_COLOR)
 	for x in range(WORLD_WIDTH):
@@ -28,8 +151,8 @@ def main():
 	pygame.display.flip()
 
 
-world = World.World(WORLD_WIDTH, WORLD_HEIGHT)
-world.gen()
+world = World(WORLD_WIDTH, WORLD_HEIGHT)
+world.cells_spawn()
 
 state = "idle"
 clock = pygame.time.Clock()
