@@ -2,6 +2,8 @@ import pygame
 # import Cell
 import World
 
+
+TICK_TIME = 30
 SCREEN_WIDTH = 640
 SCREEN_HEIGHT = 640
 SCREEN_SIZE = (SCREEN_WIDTH, SCREEN_HEIGHT)
@@ -22,6 +24,7 @@ def main():
 		for y in range(WORLD_HEIGHT):
 			if world.cells[x][y] is not None:
 				screen.fill(world.cells[x][y].color, pygame.rect.Rect(x * CELL_WIDTH, y * CELL_HEIGHT, CELL_WIDTH, CELL_HEIGHT))
+				#world.cells[x][y].do_step()
 	pygame.display.flip()
 
 
@@ -32,7 +35,7 @@ state = "idle"
 clock = pygame.time.Clock()
 while state != "quit":
 	main()
-	clock.tick(30)
+	clock.tick(TICK_TIME)
 	for e in pygame.event.get():
 		if e.type == pygame.QUIT:
 			state = "quit"
