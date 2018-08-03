@@ -15,5 +15,5 @@ class World:
 			for y in range(self.height):
 				if randint(1, 1000) == 1:
 					print(x, y)
-                                        color = (255, 0, 0)
+					color = (0, 255, 0)
 					self.cells[x][y] = Cell.Cell(x, y, color)
