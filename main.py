@@ -23,7 +23,7 @@ def main():
 	for x in range(WORLD_WIDTH):
 		for y in range(WORLD_HEIGHT):
 			if world.cells[x][y] is not None:
-				screen.fill(world.cells[x][y].color, pygame.rect.Rect(x * CELL_WIDTH, y * CELL_HEIGHT, CELL_WIDTH, CELL_HEIGHT))
+				screen.fill(world.cells[x][y].color, pygame.rect.Rect(x * CELL_WIDTH + 1, y * CELL_HEIGHT + 1, CELL_WIDTH - 2, CELL_HEIGHT - 2))
 				#world.cells[x][y].do_step()
 	pygame.display.flip()
 
