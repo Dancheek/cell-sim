@@ -10,8 +10,9 @@ class World:
 	def world_reset(self):
 		self.cells = [[None for y in range(self.height)] for x in range(self.width)]
 
-	def gen(self, max_x, max_y):
-		for x in range(max_x):
-			for y in range(max_y):
+	def gen(self):
+		for x in range(self.width):
+			for y in range(self.height):
 				if randint(1, 1000) == 1:
+					print(x, y)
 					self.cells[x][y] = Cell.Cell(x, y)
