@@ -4,7 +4,4 @@ class Cell:
 		self.y = y
 		self.color = color
 	def do_step():
-		self.x = self.x
-		
-	
-	
+		pass
