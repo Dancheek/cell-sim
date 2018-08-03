@@ -4,6 +4,13 @@ import Cell
 SOLAR_POWER = 32
 SOLAR_FADING = 2
 
+def get_light_energy(x, y):
+	energy = (SOLAR_POWER - y) / SOLAR_FADING
+	if energy <= 0:
+		return 0
+	return energy
+
+
 class World:
 	def __init__(self, width, height):
 		self.width = width
@@ -20,6 +27,3 @@ class World:
 					print(x, y)
 					color = (((x + 1) * (y + 1) - 1) % 255, 255, 0)
 					self.cells[x][y] = Cell.Cell(x, y, color)
-
-	def get_light_energy(self, x, y):
-		return (SOLAR_POWER - y) / SOLAR_FADING
