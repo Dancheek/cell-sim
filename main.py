@@ -29,6 +29,7 @@ screen = pygame.display.set_mode(SCREEN_SIZE)
 pygame.display.set_caption("Cell simulator")
 
 
+# //////////////////////////////////
 # ----------[ Cell class ]----------
 
 class Cell:
@@ -46,8 +47,6 @@ class Cell:
 		else:
 			self.genome = [23 for i in range(GENOME_SIZE)]
 
-		print(self.x, self.y, self.genome)
-
 	def get_genome_content(self, index):
 		if index >= GENOME_SIZE:
 			return self.genome[index - GENOME_SIZE]
@@ -59,7 +58,7 @@ class Cell:
 
 		if current_genome_content in genome_commands.keys():
 			genome_commands[current_genome_content](self)
-			self.genome_pointer += 1
+			# self.genome_pointer += shift
 		else:
 			self.genome_pointer += current_genome_content
 
@@ -85,21 +84,29 @@ class Cell:
 
 		delta_x, delta_y = choice(empty_spaces)
 
-		world.cells[self.x + delta_x][self.y + delta_y] = Cell(self.x + delta_x, self.y + delta_y, self.color, self.genome)
+		x, y = world.get_world_pos(self.x + delta_x, self.y + delta_y)
+		world.cells[x][y] = Cell(x, y, self.color, self.genome)
 
 	def die(self):
 		world.cells[self.x][self.y] = None
 
+# /////////////////////////////
 # -----= Genome commands =-----
 
 def photosynthesis(cell):
 	cell.energy += world.get_light_energy(cell.x, cell.y)
+	cell.genome_pointer += 1
+
+def make_step(cell):
+	cell.genome_pointer += 1
 
 genome_commands = {
-	23: photosynthesis
+	23: photosynthesis,
+	24: make_step,
 }
 
 
+# ///////////////////////////////////
 # ----------[ World class ]----------
 
 class World:
@@ -110,6 +117,13 @@ class World:
 
 	def world_reset(self):
 		self.cells = [[None for y in range(self.height)] for x in range(self.width)]
+
+	def get_world_pos(self, x, y):
+		if x < 0:
+			x += WORLD_WIDTH
+		elif x >= WORLD_WIDTH:
+			x -= WORLD_WIDTH
+		return x, y
 
 	def cells_spawn(self):
 		for x in range(self.width):
@@ -139,6 +153,7 @@ class World:
 		return FIELD_CELL
 
 
+# //////////////////////
 # ------ Mainloop ------
 
 def main():
