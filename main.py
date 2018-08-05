@@ -7,7 +7,7 @@ import pygame
 GENOME_SIZE = 64
 ENERGY_LIMIT = 200
 
-STEP_FADING = 3
+STEP_ENERGY_LOSS = 3
 
 SOLAR_POWER = 32
 SOLAR_FADING = 2
@@ -21,7 +21,7 @@ SCREEN_WIDTH = 640
 SCREEN_HEIGHT = 640
 SCREEN_SIZE = (SCREEN_WIDTH, SCREEN_HEIGHT)
 
-GENOME_START_ENERGY = 100
+CELL_START_ENERGY = 100
 
 WORLD_WIDTH = 64
 WORLD_HEIGHT = 64
@@ -40,7 +40,7 @@ class Cell:
 	def __init__(self, x, y, color, parent_genome=None):
 		self.x = x
 		self.y = y
-		self.energy = GENOME_START_ENERGY
+		self.energy = CELL_START_ENERGY
 		self.genome_pointer = 0
 		self.color = color
 
@@ -57,7 +57,7 @@ class Cell:
 		return self.genome[index]
 
 	def do_step(self):
-		self.energy -= STEP_FADING
+		self.energy -= STEP_ENERGY_LOSS
 		current_genome_content = self.get_genome_content(self.genome_pointer)
 
 		if current_genome_content in genome_commands.keys():
@@ -68,7 +68,7 @@ class Cell:
 			self.genome_pointer += current_genome_content
 
 		if self.genome_pointer >= GENOME_SIZE:
-			self.genome_pointer -= GENOME_SIZE 
+			self.genome_pointer -= GENOME_SIZE
 
 		if self.energy >= ENERGY_LIMIT:
 			self.create_child()
@@ -77,7 +77,7 @@ class Cell:
 			self.die()
 
 	def create_child(self):
-		self.energy -= GENOME_START_ENERGY
+		self.energy -= CELL_START_ENERGY
 
 		empty_spaces = []
 		for delta_x, delta_y in ((-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)):
@@ -128,7 +128,7 @@ class World:
 			x += WORLD_WIDTH
 		elif x >= WORLD_WIDTH:
 			x -= WORLD_WIDTH
-		return x, y#а по y мы должны тпшнуться типа слева выходишь справа заходишь
+		return x, y
 
 	def cells_spawn(self):
 		for x in range(self.width):
@@ -144,14 +144,10 @@ class World:
 		return energy
 
 	def field_type(self, x, y):
-		if y < 0 or y >= WORLD_HEIGHT:#я тупой, не понял зачем это(для чего, что это делает)
-			return FIELD_WALL
+		x, y = self.get_world_pos(x, y)
 
-		#if x < 0:
-		(x,y) = self.get_world_pos(x,y)
-		#	x += WORLD_WIDTH
-		#elif x >= WORLD_WIDTH:
-		#	x -= WORLD_WIDTH
+		if y < 0 or y >= WORLD_HEIGHT:
+			return FIELD_WALL
 
 		if world.cells[x][y] is None:
 			return FIELD_EMPTY
