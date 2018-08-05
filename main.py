@@ -7,6 +7,7 @@ import pygame
 GENOME_SIZE = 64
 ENERGY_LIMIT = 200
 
+STEP_FADING = 3
 
 SOLAR_POWER = 32
 SOLAR_FADING = 2
@@ -56,7 +57,7 @@ class Cell:
 		return self.genome[index]
 
 	def do_step(self):
-		self.energy -= 3
+		self.energy -= STEP_FADING
 		current_genome_content = self.get_genome_content(self.genome_pointer)
 
 		if current_genome_content in genome_commands.keys():
@@ -146,10 +147,11 @@ class World:
 		if y < 0 or y >= WORLD_HEIGHT:#я тупой, не понял зачем это(для чего, что это делает)
 			return FIELD_WALL
 
-		if x < 0: #get_world_pos()
-			x += WORLD_WIDTH
-		elif x >= WORLD_WIDTH:
-			x -= WORLD_WIDTH
+		#if x < 0:
+		(x,y) = self.get_world_pos(x,y)
+		#	x += WORLD_WIDTH
+		#elif x >= WORLD_WIDTH:
+		#	x -= WORLD_WIDTH
 
 		if world.cells[x][y] is None:
 			return FIELD_EMPTY
