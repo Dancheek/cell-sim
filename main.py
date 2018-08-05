@@ -7,6 +7,7 @@ import pygame
 GENOME_SIZE = 64
 ENERGY_LIMIT = 200
 
+
 SOLAR_POWER = 32
 SOLAR_FADING = 2
 
@@ -18,6 +19,8 @@ TICK_TIME = 30
 SCREEN_WIDTH = 640
 SCREEN_HEIGHT = 640
 SCREEN_SIZE = (SCREEN_WIDTH, SCREEN_HEIGHT)
+
+GENOME_START_ENERGY = 100
 
 WORLD_WIDTH = 64
 WORLD_HEIGHT = 64
@@ -36,7 +39,7 @@ class Cell:
 	def __init__(self, x, y, color, parent_genome=None):
 		self.x = x
 		self.y = y
-		self.energy = 100
+		self.energy = GENOME_START_ENERGY
 		self.genome_pointer = 0
 		self.color = color
 
@@ -59,11 +62,12 @@ class Cell:
 		if current_genome_content in genome_commands.keys():
 			genome_commands[current_genome_content](self)
 			# self.genome_pointer += shift
+			# ты забыл self.genome_pointer++
 		else:
 			self.genome_pointer += current_genome_content
 
 		if self.genome_pointer >= GENOME_SIZE:
-			self.genome_pointer -= GENOME_SIZE#надо же его занулить 
+			self.genome_pointer -= GENOME_SIZE 
 
 		if self.energy >= ENERGY_LIMIT:
 			self.create_child()
@@ -72,7 +76,7 @@ class Cell:
 			self.die()
 
 	def create_child(self):
-		self.energy -= 100#может поделить на два?
+		self.energy -= GENOME_START_ENERGY
 
 		empty_spaces = []
 		for delta_x, delta_y in ((-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)):
