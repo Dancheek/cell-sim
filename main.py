@@ -63,7 +63,7 @@ class Cell:
 			self.genome_pointer += current_genome_content
 
 		if self.genome_pointer >= GENOME_SIZE:
-			self.genome_pointer -= GENOME_SIZE
+			self.genome_pointer -= GENOME_SIZE#надо же его занулить 
 
 		if self.energy >= ENERGY_LIMIT:
 			self.create_child()
@@ -72,7 +72,7 @@ class Cell:
 			self.die()
 
 	def create_child(self):
-		self.energy -= 100
+		self.energy -= 100#может поделить на два?
 
 		empty_spaces = []
 		for delta_x, delta_y in ((-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)):
@@ -123,7 +123,7 @@ class World:
 			x += WORLD_WIDTH
 		elif x >= WORLD_WIDTH:
 			x -= WORLD_WIDTH
-		return x, y
+		return x, y#а по y мы должны тпшнуться типа слева выходишь справа заходишь
 
 	def cells_spawn(self):
 		for x in range(self.width):
@@ -139,10 +139,10 @@ class World:
 		return energy
 
 	def field_type(self, x, y):
-		if y < 0 or y >= WORLD_HEIGHT:
+		if y < 0 or y >= WORLD_HEIGHT:#я тупой, не понял зачем это(для чего, что это делает)
 			return FIELD_WALL
 
-		if x < 0:
+		if x < 0: #get_world_pos()
 			x += WORLD_WIDTH
 		elif x >= WORLD_WIDTH:
 			x -= WORLD_WIDTH
