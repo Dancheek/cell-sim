@@ -5,6 +5,10 @@ import pygame
 # -----= Some constants =-----
 
 GENOME_SIZE = 64
+COUNT_COMMANDS = 64
+SPAWN_RATE = 1000
+MUTATION_RATE = 1000
+
 ENERGY_LIMIT = 200
 
 STEP_ENERGY_LOSS = 3
@@ -46,8 +50,8 @@ class Cell:
 
 		if parent_genome is not None:
 			self.genome = parent_genome
-			if randint(1, 4) == 4:
-				self.genome[randint(0, 63)] = randint(0, 63)
+			if randint(1, MUTATION_RATE) == MUTATION_RATE:#показатель мутации
+				self.genome[randint(0, GENOME_SIZE - 1)] = randint(0, COUNT_COMMANDS - 1)
 		else:
 			self.genome = [23 for i in range(GENOME_SIZE)]
 
@@ -63,7 +67,7 @@ class Cell:
 		if current_genome_content in genome_commands.keys():
 			genome_commands[current_genome_content](self)
 			# self.genome_pointer += shift
-			# ты забыл self.genome_pointer++
+			self.genome_pointer += 1
 		else:
 			self.genome_pointer += current_genome_content
 
@@ -100,10 +104,9 @@ class Cell:
 
 def photosynthesis(cell):
 	cell.energy += world.get_light_energy(cell.x, cell.y)
-	cell.genome_pointer += 1
 
 def make_step(cell):
-	cell.genome_pointer += 1
+	cell.genome_pointer += 0
 
 genome_commands = {
 	23: photosynthesis,
@@ -133,7 +136,7 @@ class World:
 	def cells_spawn(self):
 		for x in range(self.width):
 			for y in range(self.height):
-				if randint(1, 1000) == 1000:
+				if randint(1, SPAWN_RATE) == SPAWN_RATE:
 					color = (0, 255-y*3.5, 0)
 					self.cells[x][y] = Cell(x, y, color)
 
