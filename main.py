@@ -56,7 +56,16 @@ class Cell:
 		else:
 			self.genome = [10 for i in range(GENOME_SIZE)]
 
-		print(self.genome)
+		self.print_stats()
+
+	def print_stats(self):
+		print("x: %2s | y: %2s " % (self.x, self.y), end='[')
+		for part in self.genome:
+			if part < 10:
+				print(part, end='')
+			else:
+				print(genome_characters[part], end='')
+		print("]")
 
 	def get_genome_content(self, index):
 		if index >= GENOME_SIZE:
@@ -112,15 +121,19 @@ def photosynthesis(cell):
 	cell.energy += world.get_light_energy(cell.x, cell.y)
 	cell.inc_genome_pointer(1)
 
-def make_step(cell):#eq jmp 1
+def make_step(cell):
 	cell.inc_genome_pointer(1)
 
 def change_color(cell):
-	cell.color = (cell.genome[cell.genome_pointer + 1],cell.genome[cell.genome_pointer + 2],cell.genome[cell.genome_pointer + 3])
-	cell.inc_genome_pointer(4)#me,red,green,blue
+	cell.color = (
+		cell.get_genome_content(cell.genome_pointer + 1) * 16,
+		cell.get_genome_content(cell.genome_pointer + 2) * 16,
+		cell.get_genome_content(cell.genome_pointer + 3) * 16
+	)
+	cell.inc_genome_pointer(4)
 
 def jmp(cell):
-	cell.inc_genome_pointer(cell.genome[cell.genome_pointer + 1])
+	cell.inc_genome_pointer(cell.get_genome_content(cell.genome_pointer + 1))
 
 genome_commands = {
 	10: photosynthesis,
@@ -129,6 +142,14 @@ genome_commands = {
 	13: jmp,
 }
 
+genome_characters = {
+	10: 'F',
+	11: 'S',
+	12: 'C',
+	13: 'J',
+	14: 'e',
+	15: 'f'
+}
 
 # ///////////////////////////////////
 # ----------[ World class ]----------
