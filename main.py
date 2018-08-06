@@ -34,8 +34,8 @@ CELL_WIDTH = 10
 CELL_HEIGHT = 10
 BG_COLOR = (37, 37, 37)
 
-COLOR_MODE_NATIVE = 1
-COLOR_MODE_ENERGY = 2
+COLOR_MODE_NATIVE = "native"
+COLOR_MODE_ENERGY = "energy"
 
 screen = pygame.display.set_mode(SCREEN_SIZE)
 pygame.display.set_caption("Cell simulator")
@@ -202,6 +202,22 @@ class World:
 
 		return FIELD_CELL
 
+	def get_cell_color(self, x, y, color_mode):
+		if color_mode == COLOR_MODE_NATIVE:
+			return self.cells[x][y].color
+
+		if color_mode == COLOR_MODE_ENERGY:
+			cell_energy = self.cells[x][y].energy
+
+			if cell_energy > ENERGY_LIMIT / 2:
+				red = 255 - round(255 / (ENERGY_LIMIT / 2) * cell_energy / 2)
+				green = 255
+			else:
+				red = 255
+				green = round(255 / (ENERGY_LIMIT / 2) * cell_energy)
+
+			return (red, green, 0)
+
 
 # //////////////////////
 # ------ Mainloop ------
@@ -217,7 +233,8 @@ def main():
 		for y in range(WORLD_HEIGHT):
 			if world.cells[x][y] is not None:
 
-				screen.fill(world.cells[x][y].color, pygame.rect.Rect(x * CELL_WIDTH + 1, y * CELL_HEIGHT + 1, CELL_WIDTH - 2, CELL_HEIGHT - 2))
+				screen.fill(world.get_cell_color(x, y, simulation_color_mode), pygame.rect.Rect(x * CELL_WIDTH + 1, y * CELL_HEIGHT + 1, CELL_WIDTH - 2, CELL_HEIGHT - 2))
+				simulation_color_mode
 
 				if simulation_state != "paused":
 					world.cells[x][y].do_step()
@@ -225,8 +242,13 @@ def main():
 	if world.cells[world_x][world_y] is None:
 		cell_string = "None"
 	else:
-		cell_string = str(world.cells[world_x][world_y])
+		cell_string = "{} [{}] <{}>".format(
+			world.get_cell_color(world_x, world_y, simulation_color_mode),
+			world.cells[world_x][world_y].get_genome_string(),
+			world.cells[world_x][world_y].energy
+		)
 
+	screen.blit(font.render("Color mode: {}".format(simulation_color_mode), 1, (255, 255, 255)), (0, SCREEN_HEIGHT - 100))
 	screen.blit(font.render(cell_string, 1, (255, 255, 255)), (0, SCREEN_HEIGHT - 80))
 	screen.blit(font.render("x: {:>2} | y: {:>2}".format(world_x, world_y), 1, (255, 255, 255)), (0, SCREEN_HEIGHT - 60))
 	screen.blit(font.render(simulation_state, 1, (255, 255, 255)), (0, SCREEN_HEIGHT - 40))
@@ -238,7 +260,7 @@ world = World(WORLD_WIDTH, WORLD_HEIGHT)
 world.cells_spawn()
 
 simulation_state = "idle"
-color_mode = COLOR_MODE_NATIVE
+simulation_color_mode = COLOR_MODE_NATIVE
 
 clock = pygame.time.Clock()
 while simulation_state != "quit":
@@ -254,3 +276,7 @@ while simulation_state != "quit":
 					simulation_state = "paused"
 				elif simulation_state == "paused":
 					simulation_state = "idle"
+			if e.key == pygame.K_1:
+				simulation_color_mode = COLOR_MODE_NATIVE
+			if e.key == pygame.K_2:
+				simulation_color_mode = COLOR_MODE_ENERGY
