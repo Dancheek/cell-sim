@@ -52,7 +52,7 @@ class Cell:
 		self.color = color
 
 		if parent_genome is not None:
-			self.genome = parent_genome
+			self.genome = parent_genome.copy()
 			if random() < MUTATION_CHANCE:
 				self.genome[randint(0, GENOME_SIZE - 1)] = randint(0, GENOME_PARTS - 1)
 		else:
