@@ -8,7 +8,7 @@ import pygame
 GENOME_SIZE = 16
 GENOME_PARTS = 16
 SPAWN_CHANCE = 1 / 1000
-MUTATION_CHANCE = 1 / 40
+MUTATION_CHANCE = 1 / 4
 
 ENERGY_LIMIT = 200
 
@@ -21,7 +21,7 @@ FIELD_EMPTY = 0
 FIELD_WALL = 1
 FIELD_CELL = 2
 
-TICK_TIME = 30
+FRAME_RATE = 100
 SCREEN_WIDTH = 640
 SCREEN_HEIGHT = 640
 SCREEN_SIZE = (SCREEN_WIDTH, SCREEN_HEIGHT)
@@ -33,6 +33,9 @@ WORLD_HEIGHT = 64
 CELL_WIDTH = 10
 CELL_HEIGHT = 10
 BG_COLOR = (37, 37, 37)
+
+COLOR_MODE_NATIVE = 1
+COLOR_MODE_ENERGY = 2
 
 screen = pygame.display.set_mode(SCREEN_SIZE)
 pygame.display.set_caption("Cell simulator")
@@ -61,7 +64,7 @@ class Cell:
 		print(self)
 
 	def __str__(self):
-		return "(%3s, %3s, %3s) [%s]" % (int(self.color[0]), int(self.color[1]), int(self.color[2]), self.get_genome_string())
+		return "({:<3} {:<3} {:<3}) [{}] <{}>".format(int(self.color[0]), int(self.color[1]), int(self.color[2]), self.get_genome_string(), self.energy)
 
 	def get_genome_string(self):
 		genome_string = ''
@@ -137,14 +140,14 @@ def change_color(cell):
 	)
 	cell.inc_genome_pointer(4)
 
-def jmp(cell):
+def move_genome_pointer(cell):
 	cell.inc_genome_pointer(cell.get_genome_content(cell.genome_pointer + 1))
 
 genome_commands = {
 	10: photosynthesis,
 	11: make_step,
 	12: change_color,
-	13: jmp,
+	13: move_genome_pointer,
 }
 
 genome_characters = {
@@ -179,7 +182,7 @@ class World:
 		for x in range(self.width):
 			for y in range(self.height):
 				if random() < SPAWN_CHANCE:
-					color = (0, 255-y*3.5, 0)
+					color = (16, 16, 16)
 					self.cells[x][y] = Cell(x, y, color)
 
 	def get_light_energy(self, x, y):
@@ -224,9 +227,10 @@ def main():
 	else:
 		cell_string = str(world.cells[world_x][world_y])
 
-	screen.blit(font.render(cell_string, 1, (255, 255, 255)), (0, SCREEN_HEIGHT - 60))
-	screen.blit(font.render("x: %2s | y: %2s" % (world_x, world_y), 1, (255, 255, 255)), (0, SCREEN_HEIGHT - 40))
-	screen.blit(font.render(simulation_state, 1, (255, 255, 255)), (0, SCREEN_HEIGHT - 20))
+	screen.blit(font.render(cell_string, 1, (255, 255, 255)), (0, SCREEN_HEIGHT - 80))
+	screen.blit(font.render("x: {:>2} | y: {:>2}".format(world_x, world_y), 1, (255, 255, 255)), (0, SCREEN_HEIGHT - 60))
+	screen.blit(font.render(simulation_state, 1, (255, 255, 255)), (0, SCREEN_HEIGHT - 40))
+	screen.blit(font.render("FPS: {}".format(round(clock.get_fps())), 1, (255, 255, 255)), (0, SCREEN_HEIGHT - 20))
 	pygame.display.flip()
 
 
@@ -234,10 +238,13 @@ world = World(WORLD_WIDTH, WORLD_HEIGHT)
 world.cells_spawn()
 
 simulation_state = "idle"
+color_mode = COLOR_MODE_NATIVE
+
 clock = pygame.time.Clock()
 while simulation_state != "quit":
 	main()
-	clock.tick(TICK_TIME)
+	clock.tick(FRAME_RATE)
+
 	for e in pygame.event.get():
 		if e.type == pygame.QUIT:
 			simulation_state = "quit"
