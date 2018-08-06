@@ -6,7 +6,7 @@ import pygame
 
 GENOME_SIZE = 64
 COUNT_COMMANDS = 64
-SPAWN_RATE = 1000
+SPAWN_RATE = 100
 MUTATION_RATE = 1000
 
 ENERGY_LIMIT = 200
@@ -50,10 +50,10 @@ class Cell:
 
 		if parent_genome is not None:
 			self.genome = parent_genome
-			if randint(1, MUTATION_RATE) == MUTATION_RATE:#показатель мутации
+			if randint(1, MUTATION_RATE) == MUTATION_RATE:
 				self.genome[randint(0, GENOME_SIZE - 1)] = randint(0, COUNT_COMMANDS - 1)
 		else:
-			self.genome = [23 for i in range(GENOME_SIZE)]
+			self.genome = [GENOME_SIZE for i in range(GENOME_SIZE)]
 
 	def get_genome_content(self, index):
 		if index >= GENOME_SIZE:
@@ -64,9 +64,8 @@ class Cell:
 		self.energy -= STEP_ENERGY_LOSS
 		current_genome_content = self.get_genome_content(self.genome_pointer)
 
-		if current_genome_content in genome_commands.keys():
-			genome_commands[current_genome_content](self)
-			# self.genome_pointer += shift
+		if (current_genome_content - GENOME_SIZE) in genome_commands.keys():
+			genome_commands[current_genome_content - GENOME_SIZE](self)
 			self.genome_pointer += 1
 		else:
 			self.genome_pointer += current_genome_content
@@ -109,8 +108,8 @@ def make_step(cell):
 	cell.genome_pointer += 0
 
 genome_commands = {
-	23: photosynthesis,
-	24: make_step,
+	0: photosynthesis,
+	1: make_step,
 }
 
 
