@@ -112,17 +112,21 @@ def photosynthesis(cell):
 	cell.energy += world.get_light_energy(cell.x, cell.y)
 	cell.inc_genome_pointer(1)
 
-def make_step(cell):
+def make_step(cell):#eq jmp 1
 	cell.inc_genome_pointer(1)
 
 def change_color(cell):
 	cell.color = (cell.genome[cell.genome_pointer + 1],cell.genome[cell.genome_pointer + 2],cell.genome[cell.genome_pointer + 3])
 	cell.inc_genome_pointer(4)#me,red,green,blue
 
+def jmp(cell):
+	cell.inc_genome_pointer(cell.genome[cell.genome_pointer + 1])
+
 genome_commands = {
 	10: photosynthesis,
 	11: make_step,
 	12: change_color,
+	13: jmp,
 }
 
 
