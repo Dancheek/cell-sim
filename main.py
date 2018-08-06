@@ -77,7 +77,7 @@ class Cell:
 		else:
 			self.inc_genome_pointer(current_genome_content)
 
-		if self.genome_pointer >= GENOME_SIZE:
+		while self.genome_pointer >= GENOME_SIZE:#переполнение может случиться из-за большого прыжка
 			self.genome_pointer -= GENOME_SIZE
 
 		if self.energy >= ENERGY_LIMIT:
