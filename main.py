@@ -8,7 +8,7 @@ import pygame
 GENOME_SIZE = 16
 GENOME_PARTS = 16
 SPAWN_CHANCE = 1 / 1000
-MUTATION_CHANCE = 1 / 400
+MUTATION_CHANCE = 1 / 40
 
 ENERGY_LIMIT = 200
 
@@ -116,8 +116,8 @@ def make_step(cell):
 	cell.inc_genome_pointer(1)
 
 def change_color(cell):
-	cell.color = (randint(1,255),randint(1,255),randint(1,255))
-	cell.inc_genome_pointer(1)
+	cell.color = (cell.genome[cell.genome_pointer + 1],cell.genome[cell.genome_pointer + 2],cell.genome[cell.genome_pointer + 3])
+	cell.inc_genome_pointer(4)#me,red,green,blue
 
 genome_commands = {
 	10: photosynthesis,
