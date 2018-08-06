@@ -37,6 +37,8 @@ BG_COLOR = (37, 37, 37)
 screen = pygame.display.set_mode(SCREEN_SIZE)
 pygame.display.set_caption("Cell simulator")
 
+pygame.font.init()
+font = pygame.font.SysFont("consolas", 20)
 
 # //////////////////////////////////
 # ----------[ Cell class ]----------
@@ -56,16 +58,19 @@ class Cell:
 		else:
 			self.genome = [10 for i in range(GENOME_SIZE)]
 
-		self.print_stats()
+		print(self)
 
-	def print_stats(self):
-		print("x: %2s | y: %2s " % (self.x, self.y), end='[')
+	def __str__(self):
+		return "(%3s, %3s, %3s) [%s]" % (int(self.color[0]), int(self.color[1]), int(self.color[2]), self.get_genome_string())
+
+	def get_genome_string(self):
+		genome_string = ''
 		for part in self.genome:
 			if part < 10:
-				print(part, end='')
+				genome_string += str(part)
 			else:
-				print(genome_characters[part], end='')
-		print("]")
+				genome_string += genome_characters[part]
+		return genome_string
 
 	def get_genome_content(self, index):
 		if index >= GENOME_SIZE:
@@ -199,23 +204,46 @@ class World:
 # ------ Mainloop ------
 
 def main():
+	m_x, m_y = pygame.mouse.get_pos()
+	world_x = m_x // CELL_WIDTH
+	world_y = m_y // CELL_HEIGHT
+
 	screen.fill(BG_COLOR)
+
 	for x in range(WORLD_WIDTH):
 		for y in range(WORLD_HEIGHT):
 			if world.cells[x][y] is not None:
+
 				screen.fill(world.cells[x][y].color, pygame.rect.Rect(x * CELL_WIDTH + 1, y * CELL_HEIGHT + 1, CELL_WIDTH - 2, CELL_HEIGHT - 2))
-				world.cells[x][y].do_step()
+
+				if simulation_state != "paused":
+					world.cells[x][y].do_step()
+
+	if world.cells[world_x][world_y] is None:
+		cell_string = "None"
+	else:
+		cell_string = str(world.cells[world_x][world_y])
+
+	screen.blit(font.render(cell_string, 1, (255, 255, 255)), (0, SCREEN_HEIGHT - 60))
+	screen.blit(font.render("x: %2s | y: %2s" % (world_x, world_y), 1, (255, 255, 255)), (0, SCREEN_HEIGHT - 40))
+	screen.blit(font.render(simulation_state, 1, (255, 255, 255)), (0, SCREEN_HEIGHT - 20))
 	pygame.display.flip()
 
 
 world = World(WORLD_WIDTH, WORLD_HEIGHT)
 world.cells_spawn()
 
-state = "idle"
+simulation_state = "idle"
 clock = pygame.time.Clock()
-while state != "quit":
+while simulation_state != "quit":
 	main()
 	clock.tick(TICK_TIME)
 	for e in pygame.event.get():
 		if e.type == pygame.QUIT:
-			state = "quit"
+			simulation_state = "quit"
+		if e.type == pygame.KEYDOWN:
+			if e.key == pygame.K_SPACE:
+				if simulation_state == "idle":
+					simulation_state = "paused"
+				elif simulation_state == "paused":
+					simulation_state = "idle"
