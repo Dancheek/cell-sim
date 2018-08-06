@@ -1,13 +1,14 @@
 from random import randint
+from random import random
 from random import choice
 import pygame
 
 # -----= Some constants =-----
 
 GENOME_SIZE = 64
-COUNT_COMMANDS = 64
-SPAWN_RATE = 100
-MUTATION_RATE = 1000
+GENOME_PARTS = 64
+SPAWN_CHANCE = 1 / 1000
+MUTATION_CHANCE = 1 / 4
 
 ENERGY_LIMIT = 200
 
@@ -50,25 +51,31 @@ class Cell:
 
 		if parent_genome is not None:
 			self.genome = parent_genome
-			if randint(1, MUTATION_RATE) == MUTATION_RATE:
-				self.genome[randint(0, GENOME_SIZE - 1)] = randint(0, COUNT_COMMANDS - 1 + GENOME_SIZE - 1)
+			if random() < MUTATION_CHANCE:
+				self.genome[randint(0, GENOME_SIZE - 1)] = randint(0, GENOME_PARTS - 1)
 		else:
-			self.genome = [GENOME_SIZE for i in range(GENOME_SIZE)]
+			self.genome = [10 for i in range(GENOME_SIZE)]
+
+		print(self.genome)
 
 	def get_genome_content(self, index):
 		if index >= GENOME_SIZE:
 			return self.genome[index - GENOME_SIZE]
 		return self.genome[index]
 
+	def inc_genome_pointer(self, num):
+		self.genome_pointer += num
+		if self.genome_pointer >= GENOME_SIZE:
+			self.genome_pointer -= GENOME_SIZE
+
 	def do_step(self):
 		self.energy -= STEP_ENERGY_LOSS
 		current_genome_content = self.get_genome_content(self.genome_pointer)
 
-		if (current_genome_content - GENOME_SIZE) in genome_commands.keys():
-			genome_commands[current_genome_content - GENOME_SIZE](self)
-			self.genome_pointer += 1
+		if (current_genome_content) in genome_commands.keys():
+			genome_commands[current_genome_content](self)
 		else:
-			self.genome_pointer += current_genome_content
+			self.inc_genome_pointer(current_genome_content)
 
 		if self.genome_pointer >= GENOME_SIZE:
 			self.genome_pointer -= GENOME_SIZE
@@ -103,13 +110,14 @@ class Cell:
 
 def photosynthesis(cell):
 	cell.energy += world.get_light_energy(cell.x, cell.y)
+	cell.inc_genome_pointer(1)
 
 def make_step(cell):
-	pass
+	cell.inc_genome_pointer(1)
 
 genome_commands = {
-	0: photosynthesis,
-	1: make_step,
+	10: photosynthesis,
+	11: make_step,
 }
 
 
@@ -135,7 +143,7 @@ class World:
 	def cells_spawn(self):
 		for x in range(self.width):
 			for y in range(self.height):
-				if randint(1, SPAWN_RATE) == SPAWN_RATE:
+				if random() < SPAWN_CHANCE:
 					color = (0, 255-y*3.5, 0)
 					self.cells[x][y] = Cell(x, y, color)
 
