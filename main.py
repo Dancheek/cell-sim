@@ -10,7 +10,7 @@ GENOME_PARTS = 16
 SPAWN_CHANCE = 1 / 1000
 MUTATION_CHANCE = 1 / 4
 
-ENERGY_LIMIT = 200
+ENERGY_LIMIT = 1000
 
 STEP_ENERGY_LOSS = 3
 
@@ -34,6 +34,17 @@ CELL_WIDTH = 10
 CELL_HEIGHT = 10
 BG_COLOR = (37, 37, 37)
 
+DIRECTION = {
+	0: (-1, -1),
+	1: (-1, 0),
+	2: (-1, 1),
+	3: (0, -1),
+	4: (0, 1),
+	5: (1, -1),
+	6: (1, 0),
+	7: (1, 1)
+}
+
 COLOR_MODE_NATIVE = "native"
 COLOR_MODE_ENERGY = "energy"
 
@@ -53,6 +64,7 @@ class Cell:
 		self.energy = CELL_START_ENERGY
 		self.genome_pointer = 0
 		self.color = color
+		self.alive = True
 
 		if parent_genome is not None:
 			self.genome = parent_genome.copy()
@@ -86,28 +98,34 @@ class Cell:
 			self.genome_pointer -= GENOME_SIZE
 
 	def do_step(self):
-		self.energy -= STEP_ENERGY_LOSS
-		current_genome_content = self.get_genome_content(self.genome_pointer)
+		if self.alive:
+			self.energy -= STEP_ENERGY_LOSS
+			current_genome_content = self.get_genome_content(self.genome_pointer)
 
-		if (current_genome_content) in genome_commands.keys():
-			genome_commands[current_genome_content](self)
+			if (current_genome_content) in genome_commands.keys():
+				genome_commands[current_genome_content](self)
+			else:
+				self.inc_genome_pointer(current_genome_content)
+
+			while self.genome_pointer >= GENOME_SIZE:#переполнение может случиться из-за большого прыжка
+				self.genome_pointer -= GENOME_SIZE
+
+			if self.energy >= ENERGY_LIMIT:
+				self.create_child()
+
+			if self.energy <= 0:
+				self.die()
 		else:
-			self.inc_genome_pointer(current_genome_content)
-
-		while self.genome_pointer >= GENOME_SIZE:#переполнение может случиться из-за большого прыжка
-			self.genome_pointer -= GENOME_SIZE
-
-		if self.energy >= ENERGY_LIMIT:
-			self.create_child()
-
-		if self.energy <= 0:
-			self.die()
+			if world.field_type(self.x, self.y + 1) == FIELD_EMPTY:
+				world.cells[self.x][self.y + 1] = self
+				world.cells[self.x][self.y] = None
+				self.y += 1
 
 	def create_child(self):
 		self.energy -= CELL_START_ENERGY
 
 		empty_spaces = []
-		for delta_x, delta_y in ((-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)):
+		for delta_x, delta_y in DIRECTION.values():
 			if world.field_type(self.x + delta_x, self.y + delta_y) == FIELD_EMPTY:
 				empty_spaces.append((delta_x, delta_y))
 		if not empty_spaces:
@@ -120,7 +138,10 @@ class Cell:
 		world.cells[x][y] = Cell(x, y, self.color, self.genome)
 
 	def die(self):
-		world.cells[self.x][self.y] = None
+		if self.energy != 0:
+			self.energy = 0
+		self.alive = False
+		# world.cells[self.x][self.y] = None
 
 # /////////////////////////////
 # -----= Genome commands =-----
@@ -209,14 +230,14 @@ class World:
 		if color_mode == COLOR_MODE_ENERGY:
 			cell_energy = self.cells[x][y].energy
 
-			if cell_energy > ENERGY_LIMIT / 2:
-				red = 255 - round(255 / (ENERGY_LIMIT / 2) * cell_energy / 2)
-				green = 255
-			else:
-				red = 255
-				green = round(255 / (ENERGY_LIMIT / 2) * cell_energy)
+			# if cell_energy > ENERGY_LIMIT / 2:
+			# 	red = 255 - round(255 / (ENERGY_LIMIT / 2) * cell_energy / 2)
+			# 	green = 255
+			# else:
+			# 	red = 255
+			# 	green = round(255 / (ENERGY_LIMIT / 2) * cell_energy)
 
-			return (red, green, 0)
+			return (255, 255 / ENERGY_LIMIT * cell_energy, 0)
 
 
 # //////////////////////
