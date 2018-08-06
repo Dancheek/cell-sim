@@ -105,7 +105,7 @@ def photosynthesis(cell):
 	cell.energy += world.get_light_energy(cell.x, cell.y)
 
 def make_step(cell):
-	cell.genome_pointer += 0
+	pass
 
 genome_commands = {
 	0: photosynthesis,
