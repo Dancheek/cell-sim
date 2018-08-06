@@ -51,7 +51,7 @@ class Cell:
 		if parent_genome is not None:
 			self.genome = parent_genome
 			if randint(1, MUTATION_RATE) == MUTATION_RATE:
-				self.genome[randint(0, GENOME_SIZE - 1)] = randint(0, COUNT_COMMANDS - 1)
+				self.genome[randint(0, GENOME_SIZE - 1)] = randint(0, COUNT_COMMANDS - 1 + GENOME_SIZE - 1)
 		else:
 			self.genome = [GENOME_SIZE for i in range(GENOME_SIZE)]
 
