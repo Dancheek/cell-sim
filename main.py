@@ -5,8 +5,8 @@ import pygame
 
 # -----= Some constants =-----
 
-GENOME_SIZE = 64
-GENOME_PARTS = 64
+GENOME_SIZE = 16
+GENOME_PARTS = 16
 SPAWN_CHANCE = 1 / 1000
 MUTATION_CHANCE = 1 / 400
 
