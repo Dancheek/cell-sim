@@ -54,6 +54,11 @@ pygame.display.set_caption("Cell simulator")
 pygame.font.init()
 font = pygame.font.SysFont("consolas", 20)
 
+def genome_mutate(genome):
+	if random() < MUTATION_CHANCE:
+		genome[randint(0, GENOME_SIZE - 1)] = randint(0, GENOME_PARTS - 1)
+	return genome
+
 # //////////////////////////////////
 # ----------[ Cell class ]----------
 
@@ -65,11 +70,11 @@ class Cell:
 		self.genome_pointer = 0
 		self.color = color
 		self.alive = True
+		world.cells_count += 1
 
 		if parent_genome is not None:
 			self.genome = parent_genome.copy()
-			if random() < MUTATION_CHANCE:
-				self.genome[randint(0, GENOME_SIZE - 1)] = randint(0, GENOME_PARTS - 1)
+			self.genome = genome_mutate(self.genome)
 		else:
 			self.genome = [10 for i in range(GENOME_SIZE)]
 
@@ -110,11 +115,11 @@ class Cell:
 			while self.genome_pointer >= GENOME_SIZE:#переполнение может случиться из-за большого прыжка
 				self.genome_pointer -= GENOME_SIZE
 
-			if self.energy >= ENERGY_LIMIT:
-				self.create_child()
-
 			if self.energy <= 0:
 				self.die()
+
+			if self.energy >= ENERGY_LIMIT:
+				self.create_child()
 		else:
 			if world.field_type(self.x, self.y + 1) == FIELD_EMPTY:
 				world.cells[self.x][self.y + 1] = self
@@ -140,8 +145,9 @@ class Cell:
 	def die(self):
 		if self.energy != 0:
 			self.energy = 0
-		self.alive = False
-		# world.cells[self.x][self.y] = None
+		# self.alive = False
+		world.cells[self.x][self.y] = None
+		world.cells_count -= 1
 
 # /////////////////////////////
 # -----= Genome commands =-----
@@ -187,10 +193,19 @@ class World:
 	def __init__(self, width, height):
 		self.width = width
 		self.height = height
+		self.turn = 0
+		self.cells_count = 0
 		self.world_reset()
 
 	def world_reset(self):
 		self.cells = [[None for y in range(self.height)] for x in range(self.width)]
+
+	def solar_flash(self):
+		for x in range(self.width):
+			for y in range(self.height):
+				if world.cells[x][y] is not None:
+					if random() < 0.5:
+						world.cells[x][y].genome = genome_mutate(world.cells[x][y].genome)
 
 	def get_world_pos(self, x, y):
 		if x < 0:
@@ -255,10 +270,12 @@ def main():
 			if world.cells[x][y] is not None:
 
 				screen.fill(world.get_cell_color(x, y, simulation_color_mode), pygame.rect.Rect(x * CELL_WIDTH + 1, y * CELL_HEIGHT + 1, CELL_WIDTH - 2, CELL_HEIGHT - 2))
-				simulation_color_mode
 
 				if simulation_state != "paused":
 					world.cells[x][y].do_step()
+
+	if simulation_state != "paused":
+		world.turn += 1
 
 	if world.cells[world_x][world_y] is None:
 		cell_string = "None"
@@ -269,6 +286,8 @@ def main():
 			world.cells[world_x][world_y].energy
 		)
 
+	screen.blit(font.render("Cells total: {}".format(world.cells_count), 1, (255, 255, 255)), (0, SCREEN_HEIGHT - 140))
+	screen.blit(font.render("Turn: {}".format(world.turn), 1, (255, 255, 255)), (0, SCREEN_HEIGHT - 120))
 	screen.blit(font.render("Color mode: {}".format(simulation_color_mode), 1, (255, 255, 255)), (0, SCREEN_HEIGHT - 100))
 	screen.blit(font.render(cell_string, 1, (255, 255, 255)), (0, SCREEN_HEIGHT - 80))
 	screen.blit(font.render("x: {:>2} | y: {:>2}".format(world_x, world_y), 1, (255, 255, 255)), (0, SCREEN_HEIGHT - 60))
@@ -301,3 +320,5 @@ while simulation_state != "quit":
 				simulation_color_mode = COLOR_MODE_NATIVE
 			if e.key == pygame.K_2:
 				simulation_color_mode = COLOR_MODE_ENERGY
+			if e.key == pygame.K_m:
+				world.solar_flash()
