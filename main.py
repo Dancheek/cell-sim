@@ -101,7 +101,7 @@ class Cell:
 			return self.genome[index - GENOME_SIZE]
 		return self.genome[index]
 
-	def inc_genome_pointer(self, num):
+	def inc_genome_pointer(self, num=1):
 		self.genome_pointer += num
 		if self.genome_pointer >= GENOME_SIZE:
 			self.genome_pointer -= GENOME_SIZE
@@ -177,15 +177,20 @@ class Cell:
 # /////////////////////////////
 # -----= Genome commands =-----
 
+def eat_cell(cell):
+	cell.eat_cell(cell.direction)
+	cell.inc_genome_pointer()
+	return 1
+
 def photosynthesis(cell):
 	cell.energy += world.get_light_energy(cell.x, cell.y)
-	cell.inc_genome_pointer(1)
+	cell.inc_genome_pointer()
 	return 1
 
 def make_step(cell):
 	target_x, target_y = world.get_pos_on_direction(cell.x, cell.y, cell.direction)
 	world.move_cell(cell.x, cell.y, target_x, target_y)
-	cell.inc_genome_pointer(1)
+	cell.inc_genome_pointer()
 	return 1
 
 def change_color(cell):
@@ -206,7 +211,7 @@ def eat_dead_cells(cell):
 		x, y = world.get_pos_on_direction(cell.x, cell.y, direction)
 		if world.get_field_type(x, y) == FIELD_DEAD_CELL:
 			cell.eat_cell(direction)
-	cell.inc_genome_pointer(1)
+	cell.inc_genome_pointer()
 	return 1
 
 def rotate_absolute(cell):
@@ -216,6 +221,7 @@ def rotate_absolute(cell):
 
 
 genome_commands = {
+	9: eat_cell,
 	10: photosynthesis,
 	11: make_step,
 	12: change_color,
@@ -328,8 +334,13 @@ class World:
 			# 	green = round(255 / (ENERGY_LIMIT / 2) * cell_energy)
 			if cell_energy <= 0:
 				return DEAD_CELL_COLOR
+			color = round(255 / ENERGY_LIMIT * cell_energy)
+			if color < 0:
+				color = 0
+			elif color > 255:
+				color = 255
 
-			return (255, int(255 / ENERGY_LIMIT * cell_energy), 0)
+			return (255, color, 0)
 
 
 # //////////////////////
