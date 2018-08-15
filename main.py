@@ -17,6 +17,8 @@ STEP_ENERGY_LOSS = 3
 SOLAR_POWER = 32
 SOLAR_FADING = 2
 
+MINING_POWER = 30
+
 FIELD_EMPTY = 0
 FIELD_WALL = 1
 FIELD_CELL = 2
@@ -90,10 +92,10 @@ class Cell:
 	def get_genome_string(self):
 		genome_string = ''
 		for part in self.genome:
-			if part < 10:
-				genome_string += str(part)
-			else:
+			if part in genome_characters:
 				genome_string += genome_characters[part]
+			else:
+				genome_string += str(part)
 		return genome_string
 
 	def get_genome_content(self, index):
@@ -106,7 +108,7 @@ class Cell:
 		if self.genome_pointer >= GENOME_SIZE:
 			self.genome_pointer -= GENOME_SIZE
 
-	def do_step(self):
+	def act(self):
 		commands_executed = 0
 		exit_code = 0
 		while True:
@@ -161,7 +163,7 @@ class Cell:
 		cell_type = world.get_field_type(target_x, target_y)
 
 		if cell_type == FIELD_CELL:
-			self.energy += DEAD_CELL_ENERGY_VALUE + world.cells[target_x][target_y].energy * 0.05
+			self.energy += round(DEAD_CELL_ENERGY_VALUE + world.cells[target_x][target_y].energy * 0.05)
 			world.remove_cell(target_x, target_y, True)
 
 		elif cell_type == FIELD_DEAD_CELL:
@@ -177,6 +179,12 @@ class Cell:
 
 # /////////////////////////////
 # -----= Genome commands =-----
+
+def mine_energy(cell):
+	if world.get_field_type(cell.x, cell.y + 1) == FIELD_WALL:
+		cell.energy += MINING_POWER
+	cell.inc_genome_pointer()
+	return 1
 
 def eat_cell(cell):
 	cell.eat_cell(cell.direction)
@@ -222,6 +230,7 @@ def rotate_absolute(cell):
 
 
 genome_commands = {
+	8: mine_energy,
 	9: eat_cell,
 	10: photosynthesis,
 	11: make_step,
@@ -232,12 +241,14 @@ genome_commands = {
 }
 
 genome_characters = {
-	10: 'F',
-	11: 'S',
+	8: 'M',
+	9: '+',
+	10: '*',
+	11: '>',
 	12: 'C',
-	13: 'J',
-	14: 'E',
-	15: 'R'
+	13: '-',
+	14: '%',
+	15: ')'
 }
 
 
@@ -276,6 +287,13 @@ class World:
 			self.cells[old_x][old_y] = None
 			self.cells[new_x][new_y].x = new_x
 			self.cells[new_x][new_y].y = new_y
+
+	def cells_act(self):
+		for x in range(WORLD_WIDTH):
+			for y in range(WORLD_HEIGHT):
+				if world.cells[x][y] is not None:
+					world.cells[x][y].act()
+		self.turn += 1
 
 	def solar_flash(self):
 		for x in range(self.width):
@@ -360,14 +378,10 @@ def main():
 	for x in range(WORLD_WIDTH):
 		for y in range(WORLD_HEIGHT):
 			if world.cells[x][y] is not None:
-
 				screen.fill(world.get_cell_color(x, y, simulation_color_mode), pygame.rect.Rect(x * CELL_WIDTH + 1, y * CELL_HEIGHT + 1, CELL_WIDTH - 2, CELL_HEIGHT - 2))
 
-				if simulation_state != "paused":
-					world.cells[x][y].do_step()
-
 	if simulation_state != "paused":
-		world.turn += 1
+		world.cells_act()
 
 	if world.cells[world_x][world_y] is None:
 		cell_string = "None"
