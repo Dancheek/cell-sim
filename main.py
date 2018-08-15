@@ -77,6 +77,7 @@ class Cell:
 		self.color = color
 		self.alive = True
 		self.direction = randint(0, 7)
+		self.acted = False
 
 		if parent_genome is not None:
 			self.genome = parent_genome.copy()
@@ -109,9 +110,13 @@ class Cell:
 			self.genome_pointer -= GENOME_SIZE
 
 	def act(self):
+		if self.acted:
+			return
 		commands_executed = 0
 		exit_code = 0
+		i = 0
 		while True:
+			i += 1
 			if self.alive:
 				self.energy -= STEP_ENERGY_LOSS
 				current_genome_content = self.get_genome_content(self.genome_pointer)
@@ -131,14 +136,17 @@ class Cell:
 					self.create_child()
 
 			else:
-				world.move_cell(self.x, self.y, self.x, self.y + 1)
-				break
+				if world.get_field_type(self.x, self.y + 1) == FIELD_EMPTY:
+					world.move_cell(self.x, self.y, self.x, self.y + 1)
+					break
 
 			if exit_code == 1:
 				break
 			commands_executed += 1
 			if commands_executed >= 10:
 				break
+
+		self.acted = True
 
 	def create_child(self):
 		self.energy -= CELL_START_ENERGY
@@ -179,6 +187,12 @@ class Cell:
 
 # /////////////////////////////
 # -----= Genome commands =-----
+
+def rotate_relative(cell):
+	cell.direction += cell.get_genome_content(cell.genome_pointer + 1)
+	cell.direction %= 8
+	cell.inc_genome_pointer(2)
+	return 0
 
 def mine_energy(cell):
 	if world.get_field_type(cell.x, cell.y + 1) == FIELD_WALL:
@@ -230,6 +244,7 @@ def rotate_absolute(cell):
 
 
 genome_commands = {
+	7: rotate_relative,
 	8: mine_energy,
 	9: eat_cell,
 	10: photosynthesis,
@@ -241,6 +256,7 @@ genome_commands = {
 }
 
 genome_characters = {
+	7: '(',
 	8: 'M',
 	9: '+',
 	10: '*',
@@ -289,6 +305,11 @@ class World:
 			self.cells[new_x][new_y].y = new_y
 
 	def cells_act(self):
+		for x in range(WORLD_WIDTH):
+			for y in range(WORLD_HEIGHT):
+				if world.cells[x][y] is not None:
+					self.cells[x][y].acted = False
+
 		for x in range(WORLD_WIDTH):
 			for y in range(WORLD_HEIGHT):
 				if world.cells[x][y] is not None:
@@ -420,19 +441,28 @@ while simulation_state != "quit":
 		if e.type == pygame.QUIT:
 			simulation_state = "quit"
 		if e.type == pygame.KEYDOWN:
+
 			if e.key == pygame.K_SPACE:
 				if simulation_state == "idle":
 					simulation_state = "paused"
 				elif simulation_state == "paused":
 					simulation_state = "idle"
+
+			if e.key == pygame.K_RIGHT:
+				if simulation_state == "paused":
+					world.cells_act()
+
 			if e.key == pygame.K_BACKQUOTE:
 				if menu_state == "shown":
 					menu_state = "hidden"
 				elif menu_state == "hidden":
 					menu_state = "shown"
+
 			if e.key == pygame.K_1:
 				simulation_color_mode = COLOR_MODE_NATIVE
+
 			if e.key == pygame.K_2:
 				simulation_color_mode = COLOR_MODE_ENERGY
+
 			if e.key == pygame.K_m:
 				world.solar_flash()
