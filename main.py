@@ -20,6 +20,7 @@ SOLAR_FADING = 2
 FIELD_EMPTY = 0
 FIELD_WALL = 1
 FIELD_CELL = 2
+FIELD_DEAD_CELL = 3
 
 FRAME_RATE = 100
 SCREEN_WIDTH = 640
@@ -27,18 +28,21 @@ SCREEN_HEIGHT = 640
 SCREEN_SIZE = (SCREEN_WIDTH, SCREEN_HEIGHT)
 
 CELL_START_ENERGY = 100
+DEAD_CELL_ENERGY_VALUE = 30
 
 WORLD_WIDTH = 64
 WORLD_HEIGHT = 64
 CELL_WIDTH = 10
 CELL_HEIGHT = 10
+
+DEAD_CELL_COLOR = (100, 100, 100)
 BG_COLOR = (37, 37, 37)
 
-DIRECTION = {
-	0: (-1, -1),
-	1: (-1, 0),
-	2: (-1, 1),
-	3: (0, -1),
+DIRECTIONS = {      # 0   3   5
+	0: (-1, -1),    #   \ | /
+	1: (-1, 0),     # 1 - @ - 6
+	2: (-1, 1),     #   / | \
+	3: (0, -1),     # 2   4   7
 	4: (0, 1),
 	5: (1, -1),
 	6: (1, 0),
@@ -63,14 +67,14 @@ def genome_mutate(genome):
 # ----------[ Cell class ]----------
 
 class Cell:
-	def __init__(self, x, y, color, parent_genome=None):
+	def __init__(self, x, y, color, parent_genome):
 		self.x = x
 		self.y = y
 		self.energy = CELL_START_ENERGY
 		self.genome_pointer = 0
 		self.color = color
 		self.alive = True
-		world.cells_count += 1
+		self.direction = 6
 
 		if parent_genome is not None:
 			self.genome = parent_genome.copy()
@@ -81,7 +85,7 @@ class Cell:
 		print(self)
 
 	def __str__(self):
-		return "({:<3} {:<3} {:<3}) [{}] <{}>".format(int(self.color[0]), int(self.color[1]), int(self.color[2]), self.get_genome_string(), self.energy)
+		return "[{:<2} | {:<2}]  ({:<3} {:<3} {:<3})  [{}]  <{}>".format(self.x, self.y, int(self.color[0]), int(self.color[1]), int(self.color[2]), self.get_genome_string(), self.energy)
 
 	def get_genome_string(self):
 		genome_string = ''
@@ -121,33 +125,43 @@ class Cell:
 			if self.energy >= ENERGY_LIMIT:
 				self.create_child()
 		else:
-			if world.field_type(self.x, self.y + 1) == FIELD_EMPTY:
-				world.cells[self.x][self.y + 1] = self
-				world.cells[self.x][self.y] = None
-				self.y += 1
-
+			world.move_cell(self.x, self.y, self.x, self.y + 1)
 	def create_child(self):
 		self.energy -= CELL_START_ENERGY
 
 		empty_spaces = []
-		for delta_x, delta_y in DIRECTION.values():
-			if world.field_type(self.x + delta_x, self.y + delta_y) == FIELD_EMPTY:
-				empty_spaces.append((delta_x, delta_y))
+		for direction in DIRECTIONS:
+			x, y = world.get_pos_on_direction(self.x, self.y, direction)
+			if world.get_field_type(x, y) == FIELD_EMPTY:
+				empty_spaces.append((x, y))
+
 		if not empty_spaces:
 			self.die()
 			return
 
-		delta_x, delta_y = choice(empty_spaces)
+		x, y = choice(empty_spaces)
 
-		x, y = world.get_world_pos(self.x + delta_x, self.y + delta_y)
-		world.cells[x][y] = Cell(x, y, self.color, self.genome)
+		x, y = world.get_world_pos(x, y)
+		world.create_cell(x, y, self.color, self.genome)
+
+	def eat_cell(self, direction):
+		target_x, target_y = world.get_pos_on_direction(self.x, self.y, direction)
+		cell_type = world.get_field_type(target_x, target_y)
+
+		if cell_type == FIELD_CELL:
+			self.energy += DEAD_CELL_ENERGY_VALUE + world.cells[target_x][target_y].energy * 0.05
+			world.remove_cell(target_x, target_y)
+		elif cell_type == FIELD_DEAD_CELL:
+			self.energy += DEAD_CELL_ENERGY_VALUE
+			world.remove_cell(target_x, target_y)
 
 	def die(self):
 		if self.energy != 0:
 			self.energy = 0
-		# self.alive = False
-		world.cells[self.x][self.y] = None
-		world.cells_count -= 1
+		self.alive = False
+		world.alive_count -= 1
+		world.dead_count += 1
+
 
 # /////////////////////////////
 # -----= Genome commands =-----
@@ -155,9 +169,14 @@ class Cell:
 def photosynthesis(cell):
 	cell.energy += world.get_light_energy(cell.x, cell.y)
 	cell.inc_genome_pointer(1)
+	return 1
 
 def make_step(cell):
+	target_x, target_y = world.get_pos_on_direction(cell.x, cell.y, cell.direction)
+	# if world.get_field_type(target_x, target_y) == FIELD_EMPTY:
+	world.move_cell(cell.x, cell.y, target_x, target_y)
 	cell.inc_genome_pointer(1)
+	return 1
 
 def change_color(cell):
 	cell.color = (
@@ -166,32 +185,33 @@ def change_color(cell):
 		cell.get_genome_content(cell.genome_pointer + 3) * 16
 	)
 	cell.inc_genome_pointer(4)
+	return 0
 
 def move_genome_pointer(cell):
 	cell.inc_genome_pointer(cell.get_genome_content(cell.genome_pointer + 1))
+	return 0
 
-def apply_eat(cell,died_cell):
-	cell.energy += 30 #change on const
-	died_cell = NULL
+def eat_dead_cells(cell):
+	for direction in DIRECTIONS:
+		x, y = world.get_pos_on_direction(cell.x, cell.y, direction)
+		if world.get_field_type(x, y) == FIELD_DEAD_CELL:
+			cell.eat_cell(direction)
+	cell.inc_genome_pointer(1)
+	return 1
 
-def try_eat_dead_siblings(cell):
-	if not world.cells[cell.x - 1, cell.y - 1].alive: apply_eat(cell, world.cells[cell.x - 1, cell.y - 1])
-	if not world.cells[cell.x - 1, cell.y].alive: apply_eat(cell, world.cells[cell.x - 1, cell.y])
-	if not world.cells[cell.x - 1, cell.y + 1].alive: apply_eat(cell, world.cells[cell.x - 1, cell.y + 1])
-	
-	if not world.cells[cell.x, cell.y - 1].alive: apply_eat(cell, world.cells[cell.x, cell.y - 1])
-	if not world.cells[cell.x, cell.y + 1].alive: apply_eat(cell, world.cells[cell.x, cell.y + 1])
-	
-	if not world.cells[cell.x + 1, cell.y - 1].alive: apply_eat(cell, world.cells[cell.x + 1, cell.y - 1])
-	if not world.cells[cell.x + 1, cell.y].alive: apply_eat(cell, world.cells[cell.x + 1, cell.y])
-	if not world.cells[cell.x + 1, cell.y + 1].alive: apply_eat(cell, world.cells[cell.x + 1, cell.y + 1])
+def rotate_absolute(cell):
+	cell.direction = cell.get_genome_content(cell.genome_pointer + 1) % 8
+	cell.inc_genome_pointer(2)
+	return 1
+
 
 genome_commands = {
 	10: photosynthesis,
 	11: make_step,
 	12: change_color,
 	13: move_genome_pointer,
-	14: try_eat_dead_siblings
+	14: eat_dead_cells,
+	15: rotate_absolute
 }
 
 genome_characters = {
@@ -199,9 +219,10 @@ genome_characters = {
 	11: 'S',
 	12: 'C',
 	13: 'J',
-	14: 'e',
-	15: 'f'
+	14: 'E',
+	15: 'R'
 }
+
 
 # ///////////////////////////////////
 # ----------[ World class ]----------
@@ -212,10 +233,29 @@ class World:
 		self.height = height
 		self.turn = 0
 		self.cells_count = 0
+		self.dead_count = 0
+		self.alive_count = 0
 		self.world_reset()
 
 	def world_reset(self):
 		self.cells = [[None for y in range(self.height)] for x in range(self.width)]
+
+	def remove_cell(self, x, y):
+		self.cells[x][y] = None
+		self.cells_count -= 1
+		self.dead_count -= 1
+
+	def create_cell(self, x, y, color, parent_genome=None):
+		self.cells[x][y] = Cell(x, y, color, parent_genome)
+		self.cells_count += 1
+		self.alive_count += 1
+
+	def move_cell(self, old_x, old_y, new_x, new_y):
+		if self.get_field_type(new_x, new_y) == FIELD_EMPTY:
+			self.cells[new_x][new_y] = self.cells[old_x][old_y]
+			self.cells[old_x][old_y] = None
+			self.cells[new_x][new_y].x = new_x
+			self.cells[new_x][new_y].y = new_y
 
 	def solar_flash(self):
 		for x in range(self.width):
@@ -231,12 +271,17 @@ class World:
 			x -= WORLD_WIDTH
 		return x, y
 
+	def get_pos_on_direction(self, x, y, direction):
+		delta_x, delta_y = DIRECTIONS[direction]
+		return self.get_world_pos(x + delta_x, y + delta_y)
+
 	def cells_spawn(self):
 		for x in range(self.width):
 			for y in range(self.height):
 				if random() < SPAWN_CHANCE:
 					color = (16, 16, 16)
-					self.cells[x][y] = Cell(x, y, color)
+					self.create_cell(x, y, color)
+					# self.cells[x][y] = Cell(x, y, color)
 
 	def get_light_energy(self, x, y):
 		energy = (SOLAR_POWER - y) / SOLAR_FADING
@@ -244,7 +289,7 @@ class World:
 			return 0
 		return energy
 
-	def field_type(self, x, y):
+	def get_field_type(self, x, y):
 		x, y = self.get_world_pos(x, y)
 
 		if y < 0 or y >= WORLD_HEIGHT:
@@ -253,7 +298,10 @@ class World:
 		if world.cells[x][y] is None:
 			return FIELD_EMPTY
 
-		return FIELD_CELL
+		if world.cells[x][y].alive:
+			return FIELD_CELL
+
+		return FIELD_DEAD_CELL
 
 	def get_cell_color(self, x, y, color_mode):
 		if color_mode == COLOR_MODE_NATIVE:
@@ -268,8 +316,10 @@ class World:
 			# else:
 			# 	red = 255
 			# 	green = round(255 / (ENERGY_LIMIT / 2) * cell_energy)
+			if cell_energy <= 0:
+				return DEAD_CELL_COLOR
 
-			return (255, 255 / ENERGY_LIMIT * cell_energy, 0)
+			return (255, int(255 / ENERGY_LIMIT * cell_energy), 0)
 
 
 # //////////////////////
@@ -303,13 +353,15 @@ def main():
 			world.cells[world_x][world_y].energy
 		)
 
-	screen.blit(font.render("Cells total: {}".format(world.cells_count), 1, (255, 255, 255)), (0, SCREEN_HEIGHT - 140))
-	screen.blit(font.render("Turn: {}".format(world.turn), 1, (255, 255, 255)), (0, SCREEN_HEIGHT - 120))
-	screen.blit(font.render("Color mode: {}".format(simulation_color_mode), 1, (255, 255, 255)), (0, SCREEN_HEIGHT - 100))
-	screen.blit(font.render(cell_string, 1, (255, 255, 255)), (0, SCREEN_HEIGHT - 80))
-	screen.blit(font.render("x: {:>2} | y: {:>2}".format(world_x, world_y), 1, (255, 255, 255)), (0, SCREEN_HEIGHT - 60))
-	screen.blit(font.render(simulation_state, 1, (255, 255, 255)), (0, SCREEN_HEIGHT - 40))
-	screen.blit(font.render("FPS: {}".format(round(clock.get_fps())), 1, (255, 255, 255)), (0, SCREEN_HEIGHT - 20))
+	if menu_state == "shown":
+		screen.blit(font.render("Cells: {} ({}/{})".format(world.cells_count, world.alive_count, world.dead_count), 1, (255, 255, 255)), (0, SCREEN_HEIGHT - 140))
+		screen.blit(font.render("Turn: {}".format(world.turn), 1, (255, 255, 255)), (0, SCREEN_HEIGHT - 120))
+		screen.blit(font.render("Color mode: {}".format(simulation_color_mode), 1, (255, 255, 255)), (0, SCREEN_HEIGHT - 100))
+		screen.blit(font.render(cell_string, 1, (255, 255, 255)), (0, SCREEN_HEIGHT - 80))
+		screen.blit(font.render("x: {:>2} | y: {:>2}".format(world_x, world_y), 1, (255, 255, 255)), (0, SCREEN_HEIGHT - 60))
+		screen.blit(font.render(simulation_state, 1, (255, 255, 255)), (0, SCREEN_HEIGHT - 40))
+		screen.blit(font.render("FPS: {}".format(round(clock.get_fps())), 1, (255, 255, 255)), (0, SCREEN_HEIGHT - 20))
+
 	pygame.display.flip()
 
 
@@ -317,6 +369,7 @@ world = World(WORLD_WIDTH, WORLD_HEIGHT)
 world.cells_spawn()
 
 simulation_state = "idle"
+menu_state = "shown"
 simulation_color_mode = COLOR_MODE_NATIVE
 
 clock = pygame.time.Clock()
@@ -333,6 +386,11 @@ while simulation_state != "quit":
 					simulation_state = "paused"
 				elif simulation_state == "paused":
 					simulation_state = "idle"
+			if e.key == pygame.K_BACKQUOTE:
+				if menu_state == "shown":
+					menu_state = "hidden"
+				elif menu_state == "hidden":
+					menu_state = "shown"
 			if e.key == pygame.K_1:
 				simulation_color_mode = COLOR_MODE_NATIVE
 			if e.key == pygame.K_2:
