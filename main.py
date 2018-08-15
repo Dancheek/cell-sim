@@ -372,8 +372,8 @@ def main():
 	if world.cells[world_x][world_y] is None:
 		cell_string = "None"
 	else:
-		cell_string = "{} [{}] <{}>".format(
-			world.get_cell_color(world_x, world_y, simulation_color_mode),
+		cell_string = "({:<3} {:<3} {:<3}) [{}] <{}>".format(
+			*world.get_cell_color(world_x, world_y, simulation_color_mode),
 			world.cells[world_x][world_y].get_genome_string(),
 			world.cells[world_x][world_y].energy
 		)
