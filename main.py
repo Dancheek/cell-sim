@@ -74,7 +74,7 @@ class Cell:
 		self.genome_pointer = 0
 		self.color = color
 		self.alive = True
-		self.direction = 6
+		self.direction = randint(0, 7)
 
 		if parent_genome is not None:
 			self.genome = parent_genome.copy()
@@ -162,7 +162,8 @@ class Cell:
 
 		if cell_type == FIELD_CELL:
 			self.energy += DEAD_CELL_ENERGY_VALUE + world.cells[target_x][target_y].energy * 0.05
-			world.remove_cell(target_x, target_y)
+			world.remove_cell(target_x, target_y, True)
+
 		elif cell_type == FIELD_DEAD_CELL:
 			self.energy += DEAD_CELL_ENERGY_VALUE
 			world.remove_cell(target_x, target_y)
@@ -256,10 +257,13 @@ class World:
 	def world_reset(self):
 		self.cells = [[None for y in range(self.height)] for x in range(self.width)]
 
-	def remove_cell(self, x, y):
+	def remove_cell(self, x, y, alive=False):
 		self.cells[x][y] = None
 		self.cells_count -= 1
-		self.dead_count -= 1
+		if alive:
+			self.alive_count -= 1
+		else:
+			self.dead_count -= 1
 
 	def create_cell(self, x, y, color, parent_genome=None):
 		self.cells[x][y] = Cell(x, y, color, parent_genome)
