@@ -170,11 +170,27 @@ def change_color(cell):
 def move_genome_pointer(cell):
 	cell.inc_genome_pointer(cell.get_genome_content(cell.genome_pointer + 1))
 
+def apply_eat(cell,died_cell):
+	cell.energy += 30 #change on const
+	died_cell = NULL
+
+def try_eat_dead_siblings(cell):
+	if !world.cells[cell.x - 1, cell.y - 1].alive: apply_eat(cell, world.cells[cell.x - 1, cell.y - 1])
+	if !world.cells[cell.x - 1, cell.y].alive: apply_eat(cell, world.cells[cell.x - 1, cell.y])
+	if !world.cells[cell.x - 1, cell.y + 1].alive: apply_eat(cell, world.cells[cell.x - 1, cell.y + 1])
+	
+	if !world.cells[cell.x, cell.y - 1].alive: apply_eat(cell, world.cells[cell.x, cell.y - 1])
+	if !world.cells[cell.x, cell.y + 1].alive: apply_eat(cell, world.cells[cell.x, cell.y + 1])
+	
+	if !world.cells[cell.x + 1, cell.y - 1].alive: apply_eat(cell, world.cells[cell.x + 1, cell.y - 1])
+	if !world.cells[cell.x + 1, cell.y].alive: apply_eat(cell, world.cells[cell.x + 1, cell.y])
+	if !world.cells[cell.x + 1, cell.y + 1].alive: apply_eat(cell, world.cells[cell.x + 1, cell.y + 1])
 genome_commands = {
 	10: photosynthesis,
 	11: make_step,
 	12: change_color,
 	13: move_genome_pointer,
+	14: try_eat_dead_siblings
 }
 
 genome_characters = {
