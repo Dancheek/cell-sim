@@ -119,7 +119,7 @@ class Cell:
 				else:
 					self.inc_genome_pointer(current_genome_content)
 
-				while self.genome_pointer >= GENOME_SIZE:#переполнение может случиться из-за большого прыжка
+				if self.genome_pointer >= GENOME_SIZE:
 					self.genome_pointer -= GENOME_SIZE
 
 				if self.energy <= 0:
