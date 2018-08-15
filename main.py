@@ -107,25 +107,37 @@ class Cell:
 			self.genome_pointer -= GENOME_SIZE
 
 	def do_step(self):
-		if self.alive:
-			self.energy -= STEP_ENERGY_LOSS
-			current_genome_content = self.get_genome_content(self.genome_pointer)
+		commands_executed = 0
+		exit_code = 0
+		while True:
+			if self.alive:
+				self.energy -= STEP_ENERGY_LOSS
+				current_genome_content = self.get_genome_content(self.genome_pointer)
 
-			if (current_genome_content) in genome_commands.keys():
-				genome_commands[current_genome_content](self)
+				if (current_genome_content) in genome_commands.keys():
+					exit_code = genome_commands[current_genome_content](self)
+				else:
+					self.inc_genome_pointer(current_genome_content)
+
+				while self.genome_pointer >= GENOME_SIZE:#переполнение может случиться из-за большого прыжка
+					self.genome_pointer -= GENOME_SIZE
+
+				if self.energy <= 0:
+					self.die()
+
+				if self.energy >= ENERGY_LIMIT:
+					self.create_child()
+
 			else:
-				self.inc_genome_pointer(current_genome_content)
+				world.move_cell(self.x, self.y, self.x, self.y + 1)
+				break
 
-			while self.genome_pointer >= GENOME_SIZE:#переполнение может случиться из-за большого прыжка
-				self.genome_pointer -= GENOME_SIZE
+			if exit_code == 1:
+				break
+			commands_executed += 1
+			if commands_executed >= 10:
+				break
 
-			if self.energy <= 0:
-				self.die()
-
-			if self.energy >= ENERGY_LIMIT:
-				self.create_child()
-		else:
-			world.move_cell(self.x, self.y, self.x, self.y + 1)
 	def create_child(self):
 		self.energy -= CELL_START_ENERGY
 
@@ -156,8 +168,7 @@ class Cell:
 			world.remove_cell(target_x, target_y)
 
 	def die(self):
-		if self.energy != 0:
-			self.energy = 0
+		self.energy = 0
 		self.alive = False
 		world.alive_count -= 1
 		world.dead_count += 1
@@ -173,7 +184,6 @@ def photosynthesis(cell):
 
 def make_step(cell):
 	target_x, target_y = world.get_pos_on_direction(cell.x, cell.y, cell.direction)
-	# if world.get_field_type(target_x, target_y) == FIELD_EMPTY:
 	world.move_cell(cell.x, cell.y, target_x, target_y)
 	cell.inc_genome_pointer(1)
 	return 1
@@ -285,9 +295,9 @@ class World:
 
 	def get_light_energy(self, x, y):
 		energy = (SOLAR_POWER - y) / SOLAR_FADING
-		if energy <= 0:
+		if energy < 0:
 			return 0
-		return energy
+		return round(energy)
 
 	def get_field_type(self, x, y):
 		x, y = self.get_world_pos(x, y)
