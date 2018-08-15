@@ -175,16 +175,17 @@ def apply_eat(cell,died_cell):
 	died_cell = NULL
 
 def try_eat_dead_siblings(cell):
-	if !world.cells[cell.x - 1, cell.y - 1].alive: apply_eat(cell, world.cells[cell.x - 1, cell.y - 1])
-	if !world.cells[cell.x - 1, cell.y].alive: apply_eat(cell, world.cells[cell.x - 1, cell.y])
-	if !world.cells[cell.x - 1, cell.y + 1].alive: apply_eat(cell, world.cells[cell.x - 1, cell.y + 1])
+	if not world.cells[cell.x - 1, cell.y - 1].alive: apply_eat(cell, world.cells[cell.x - 1, cell.y - 1])
+	if not world.cells[cell.x - 1, cell.y].alive: apply_eat(cell, world.cells[cell.x - 1, cell.y])
+	if not world.cells[cell.x - 1, cell.y + 1].alive: apply_eat(cell, world.cells[cell.x - 1, cell.y + 1])
 	
-	if !world.cells[cell.x, cell.y - 1].alive: apply_eat(cell, world.cells[cell.x, cell.y - 1])
-	if !world.cells[cell.x, cell.y + 1].alive: apply_eat(cell, world.cells[cell.x, cell.y + 1])
+	if not world.cells[cell.x, cell.y - 1].alive: apply_eat(cell, world.cells[cell.x, cell.y - 1])
+	if not world.cells[cell.x, cell.y + 1].alive: apply_eat(cell, world.cells[cell.x, cell.y + 1])
 	
-	if !world.cells[cell.x + 1, cell.y - 1].alive: apply_eat(cell, world.cells[cell.x + 1, cell.y - 1])
-	if !world.cells[cell.x + 1, cell.y].alive: apply_eat(cell, world.cells[cell.x + 1, cell.y])
-	if !world.cells[cell.x + 1, cell.y + 1].alive: apply_eat(cell, world.cells[cell.x + 1, cell.y + 1])
+	if not world.cells[cell.x + 1, cell.y - 1].alive: apply_eat(cell, world.cells[cell.x + 1, cell.y - 1])
+	if not world.cells[cell.x + 1, cell.y].alive: apply_eat(cell, world.cells[cell.x + 1, cell.y])
+	if not world.cells[cell.x + 1, cell.y + 1].alive: apply_eat(cell, world.cells[cell.x + 1, cell.y + 1])
+
 genome_commands = {
 	10: photosynthesis,
 	11: make_step,
