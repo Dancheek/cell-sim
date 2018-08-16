@@ -53,6 +53,7 @@ DIRECTIONS = {      # 0   3   5
 
 COLOR_MODE_NATIVE = "native"
 COLOR_MODE_ENERGY = "energy"
+COLOR_MODE_EATING = "eating"
 
 screen = pygame.display.set_mode(SCREEN_SIZE)
 pygame.display.set_caption("Cell simulator")
@@ -78,6 +79,7 @@ class Cell:
 		self.alive = True
 		self.direction = randint(0, 7)
 		self.acted = False
+		self.eating_color = [255, 255, 255]
 
 		if parent_genome is not None:
 			self.genome = parent_genome.copy()
@@ -89,6 +91,17 @@ class Cell:
 
 	def __str__(self):
 		return "[{:<2} | {:<2}]  ({:<3} {:<3} {:<3})  [{}]  <{}>".format(self.x, self.y, int(self.color[0]), int(self.color[1]), int(self.color[2]), self.get_genome_string(), self.energy)
+
+	def change_eating_color(self, eating_type, energy):
+		for i in range(3):
+			self.eating_color[i] -= energy
+		self.eating_color[eating_type] += energy*2
+
+		for i in range(3):
+			if self.eating_color[i] < 0:
+				self.eating_color[i] = 0
+			elif self.eating_color[i] > 255:
+				self.eating_color[i] = 255
 
 	def get_genome_string(self):
 		genome_string = ''
@@ -171,11 +184,14 @@ class Cell:
 		cell_type = world.get_field_type(target_x, target_y)
 
 		if cell_type == FIELD_CELL:
-			self.energy += round(DEAD_CELL_ENERGY_VALUE + world.cells[target_x][target_y].energy * 0.05)
+			energy = round(DEAD_CELL_ENERGY_VALUE + world.cells[target_x][target_y].energy * 0.05)
+			self.energy += energy
+			self.change_eating_color(0, energy*2)
 			world.remove_cell(target_x, target_y, True)
 
 		elif cell_type == FIELD_DEAD_CELL:
 			self.energy += DEAD_CELL_ENERGY_VALUE
+			self.change_eating_color(2, DEAD_CELL_ENERGY_VALUE*2)
 			world.remove_cell(target_x, target_y)
 
 	def die(self):
@@ -206,7 +222,9 @@ def eat_cell(cell):
 	return 1
 
 def photosynthesis(cell):
-	cell.energy += world.get_light_energy(cell.x, cell.y)
+	energy = world.get_light_energy(cell.x, cell.y)
+	cell.energy += energy
+	cell.change_eating_color(1, energy)
 	cell.inc_genome_pointer()
 	return 1
 
@@ -385,6 +403,11 @@ class World:
 
 			return (255, color, 0)
 
+		if color_mode == COLOR_MODE_EATING:
+			if self.cells[x][y].energy == 0:
+				return DEAD_CELL_COLOR
+			return self.cells[x][y].eating_color
+
 
 # //////////////////////
 # ------ Mainloop ------
@@ -463,6 +486,9 @@ while simulation_state != "quit":
 
 			if e.key == pygame.K_2:
 				simulation_color_mode = COLOR_MODE_ENERGY
+
+			if e.key == pygame.K_3:
+				simulation_color_mode = COLOR_MODE_EATING
 
 			if e.key == pygame.K_m:
 				world.solar_flash()
