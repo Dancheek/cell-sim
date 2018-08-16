@@ -54,6 +54,7 @@ DIRECTIONS = {      # 0   3   5
 COLOR_MODE_NATIVE = "native"
 COLOR_MODE_ENERGY = "energy"
 COLOR_MODE_EATING = "eating"
+COLOR_MODE_GENOME = "genome"
 
 screen = pygame.display.set_mode(SCREEN_SIZE)
 pygame.display.set_caption("Cell simulator")
@@ -408,6 +409,12 @@ class World:
 				return DEAD_CELL_COLOR
 			return self.cells[x][y].eating_color
 
+		if color_mode == COLOR_MODE_GENOME:
+			for i in self.cells[x][y].genome:
+				if i == genome_part_showing:
+					return (0, 255, 0)
+			return (255, 0, 0)
+
 
 # //////////////////////
 # ------ Mainloop ------
@@ -439,7 +446,13 @@ def main():
 	if menu_state == "shown":
 		screen.blit(font.render("Cells: {} ({}/{})".format(world.cells_count, world.alive_count, world.dead_count), 1, (255, 255, 255)), (0, SCREEN_HEIGHT - 140))
 		screen.blit(font.render("Turn: {}".format(world.turn), 1, (255, 255, 255)), (0, SCREEN_HEIGHT - 120))
-		screen.blit(font.render("Color mode: {}".format(simulation_color_mode), 1, (255, 255, 255)), (0, SCREEN_HEIGHT - 100))
+		if simulation_color_mode == COLOR_MODE_GENOME:
+			if genome_part_showing in genome_characters:
+				screen.blit(font.render("Color mode: genome {}".format(genome_characters[genome_part_showing]), 1, (255, 255, 255)), (0, SCREEN_HEIGHT - 100))
+			else:
+				screen.blit(font.render("Color mode: genome {}".format(genome_part_showing), 1, (255, 255, 255)), (0, SCREEN_HEIGHT - 100))
+		else:
+			screen.blit(font.render("Color mode: {}".format(simulation_color_mode), 1, (255, 255, 255)), (0, SCREEN_HEIGHT - 100))
 		screen.blit(font.render(cell_string, 1, (255, 255, 255)), (0, SCREEN_HEIGHT - 80))
 		screen.blit(font.render("x: {:>2} | y: {:>2}".format(world_x, world_y), 1, (255, 255, 255)), (0, SCREEN_HEIGHT - 60))
 		screen.blit(font.render(simulation_state, 1, (255, 255, 255)), (0, SCREEN_HEIGHT - 40))
@@ -453,6 +466,7 @@ world.cells_spawn()
 
 simulation_state = "idle"
 menu_state = "shown"
+genome_part_showing = 10
 simulation_color_mode = COLOR_MODE_NATIVE
 
 clock = pygame.time.Clock()
@@ -475,6 +489,18 @@ while simulation_state != "quit":
 				if simulation_state == "paused":
 					world.cells_act()
 
+			if e.key == pygame.K_UP:
+				if simulation_color_mode == "genome":
+					genome_part_showing += 1
+					if genome_part_showing >= GENOME_PARTS:
+						genome_part_showing -= GENOME_PARTS
+
+			if e.key == pygame.K_DOWN:
+				if simulation_color_mode == "genome":
+					genome_part_showing -= 1
+					if genome_part_showing < 0:
+						genome_part_showing += GENOME_PARTS
+
 			if e.key == pygame.K_BACKQUOTE:
 				if menu_state == "shown":
 					menu_state = "hidden"
@@ -489,6 +515,9 @@ while simulation_state != "quit":
 
 			if e.key == pygame.K_3:
 				simulation_color_mode = COLOR_MODE_EATING
+
+			if e.key == pygame.K_4:
+				simulation_color_mode = COLOR_MODE_GENOME
 
 			if e.key == pygame.K_m:
 				world.solar_flash()
