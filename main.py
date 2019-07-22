@@ -88,7 +88,7 @@ class Cell:
 		else:
 			self.genome = [10 for i in range(GENOME_SIZE)]
 
-		print(self)
+		# print(self)
 
 	def __str__(self):
 		return "[{:<2} | {:<2}]  ({:<3} {:<3} {:<3})  [{}]  <{}>".format(self.x, self.y, int(self.color[0]), int(self.color[1]), int(self.color[2]), self.get_genome_string(), self.energy)
@@ -335,6 +335,12 @@ class World:
 					world.cells[x][y].act()
 		self.turn += 1
 
+	def render(self):
+		for x in range(WORLD_WIDTH):
+			for y in range(WORLD_HEIGHT):
+				if self.cells[x][y] is not None:
+					screen.fill(self.get_cell_color(x, y, simulation_color_mode), pygame.rect.Rect(x * CELL_WIDTH + 1, y * CELL_HEIGHT + 1, CELL_WIDTH - 2, CELL_HEIGHT - 2))
+
 	def solar_flash(self):
 		for x in range(self.width):
 			for y in range(self.height):
@@ -426,10 +432,7 @@ def main():
 
 	screen.fill(BG_COLOR)
 
-	for x in range(WORLD_WIDTH):
-		for y in range(WORLD_HEIGHT):
-			if world.cells[x][y] is not None:
-				screen.fill(world.get_cell_color(x, y, simulation_color_mode), pygame.rect.Rect(x * CELL_WIDTH + 1, y * CELL_HEIGHT + 1, CELL_WIDTH - 2, CELL_HEIGHT - 2))
+	world.render()
 
 	if simulation_state != "paused":
 		world.cells_act()
